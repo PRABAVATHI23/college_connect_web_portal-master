@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - College Connect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/modern-ui.css">
+
+</head>
+
+<body>
+    <div class="dynamic-bg"></div>
+
+    <nav class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+        <a href="index.html" class="nav-brand"><i class="fas fa-university"></i> CollegeConnect</a>
+        <a href="index.html" style="text-decoration: none; color: white; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 8px; transition: 0.3s; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </nav>
+
+    <main style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: 70px;">
+        <div class="glass-card" style="padding: 40px; width: 100%; max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 25px;">
+                <h2 style="color: var(--primary);">Welcome Back</h2>
+                <p style="font-size: 14px; opacity: 0.7;">Login to access your dashboard</p>
+            </div>
+
+            <div style="margin-bottom: 20px; position: relative;">
+                <i class="fas fa-user"
+                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--primary);"></i>
+                <input type="text" id="logID" placeholder="User ID or Admin Email" style="padding-left: 40px;">
+            </div>
+
+            <div style="margin-bottom: 25px; position: relative;">
+                <i class="fas fa-lock"
+                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--primary);"></i>
+                <input type="password" id="logPass" placeholder="Password"
+                    style="padding-left: 40px; padding-right: 40px;">
+                <i class="fas fa-eye-slash" id="togglePassword" onclick="togglePass('logPass', this)"
+                    style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--primary);"></i>
+            </div>
+
+            <a href="#" onclick="openModal()"
+                style="display: block; text-align: right; margin-bottom: 15px; color: var(--primary); font-size: 14px; text-decoration: none; font-weight: bold;">Forgot
+                Password?</a>
+
+            <div id="passHint"
+                style="font-size: 11px; color: #ef4444; margin-bottom: 15px; text-align: left; display: none;">
+                Password must include a special char (e.g., _).
+            </div>
+
+            <button class="btn-primary" id="loginBtn" style="width: 100%; font-weight: bold;">
+                Login
+            </button>
+
+            <div style="margin-top: 20px; font-size: 14px;">
+                Don't have an account? <a href="register.html"
+                    style="color: var(--primary); font-weight: bold;">Register</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="forgotModal" class="modal">
+        <div class="modal-content glass-card">
+            <span onclick="closeModal()" class="modal-close">&times;</span>
+
+            <div id="step1">
+                <h3 style="color: var(--primary); margin-bottom: 15px;">Reset Password</h3>
+                <input type="email" id="resetID" placeholder="Student ID or Registered Email"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 15px;">
+                <button class="btn-primary" onclick="handleSendResetEmail()" style="width: 100%;">Send Reset Email</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/ui.js"></script>
+
+    <script type="module">
+        import { loginUser, resetPassword } from "./js/auth.js";
+
+        // --- TOGGLE PASSWORD LOGIC ---
+        window.togglePass = function (id, icon) {
+            const input = document.getElementById(id);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("fa-eye-slash", "fa-eye");
+            } else {
+                input.type = "password";
+                icon.classList.replace("fa-eye", "fa-eye-slash");
+            }
+        };
+
+        window.openModal = () => document.getElementById('forgotModal').classList.add('show');
+        window.closeModal = () => document.getElementById('forgotModal').classList.remove('show');
+
+        // Login Logic [cite: 2026-01-15]
+        async function handleLogin() {
+            let id = document.getElementById('logID').value.trim();
+            let pass = document.getElementById('logPass').value;
+            if (!id || !pass) return alert("Fill all fields.");
+
+            if (pass.length < 6) {
+                document.getElementById('passHint').innerText = "Password must be at least 6 characters.";
+                document.getElementById('passHint').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('passHint').style.display = 'none';
+            }
+
+            try {
+                const userData = await loginUser(id, pass);
+                window.location.replace(userData.role === "admin" ? "admin/index.html" : "student/index.html");
+            } catch (e) { alert(e.code === "auth/invalid-credential" ? "Invalid Credentials!" : (e.message || "Login Error.")); }
+        }
+
+        // OTP Logic [cite: 2026-01-15]
+        window.handleSendResetEmail = async function () {
+            const inputVal = document.getElementById('resetID').value.trim();
+            if (!inputVal) return alert("Enter your registered email!");
+            try {
+                await resetPassword(inputVal);
+                closeModal();
+                alert("Password reset email sent. Check your inbox.");
+            } catch (e) { alert(e.message || "Unable to send reset email."); }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('loginBtn');
+            if (btn) btn.addEventListener('click', handleLogin);
+        });
+        document.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+    </script>
+</body>
+
+</html>
